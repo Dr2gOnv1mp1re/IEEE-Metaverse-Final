@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interactive 3D Modular Robotics Drag-and-Drop Builder and Kinematics Simulator for the IEEE Educational Robotics Metaverse."
+    />
+    <link rel="icon" type="image/svg+xml" href="/robot-icon.svg" />
+    <title>IEEE Robotics Metaverse - 3D Modular Robotics Simulator</title>
+    <script type="module" crossorigin src="/assets/index-B5dbIp6g.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CcNMGkjr.css">
+  </head>
+  <body>
+    <!-- Three.js Canvas Mount -->
+    <div id="canvas-container"></div>
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="top-nav" id="top-nav">
+      <div class="nav-brand">
+        <img src="/robot-icon.svg" alt="Robot Icon" class="brand-icon" />
+        <div class="brand-text">
+          <h1 class="brand-title">Robotics Lab Metaverse</h1>
+          <span class="brand-sub">Modular 3D Assembly &amp; Simulator</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="mode-switcher-container">
+        <div class="mode-switcher" id="mode-switcher">
+          <button type="button" class="mode-btn active" id="btn-mode-build" title="Drag &amp; Drop Assembly Mode">
+            <span class="mode-icon">🛠️</span>
+            <span>BUILD MODE</span>
+          </button>
+          <button type="button" class="mode-btn" id="btn-mode-sim" title="Forward Kinematics & Motion Simulator">
+            <span class="mode-icon">▶️</span>
+            <span>SIMULATION MODE</span>
+          </button>
+          <button type="button" class="mode-btn" id="btn-mode-tut" title="Interactive Guided Robotics Assembly Lessons">
+            <span class="mode-icon">🎓</span>
+            <span>TUTORIAL</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="nav-actions">
+        <!-- Preset Selector -->
+        <div class="preset-dropdown-wrap">
+          <label for="preset-select" class="sr-only">Robot Presets</label>
+          <select id="preset-select" class="nav-select">
+            <option value="" disabled selected>⚡ Load Preset...</option>
+            <option value="industrial_arm">6-Axis Industrial Robotic Arm</option>
+            <option value="mobile_rover">Autonomous Mobile Inspection Rover</option>
+            <option value="mobile_manipulator">Laser Welding Manipulator</option>
+            <option value="clear">Empty Assembly Table</option>
+          </select>
+        </div>
+
+        <!-- Color Theme Selector -->
+        <div class="theme-select-wrap">
+          <select id="theme-select" class="nav-select" title="Color Theme">
+            <option value="cyber">Theme: Cyber Slate</option>
+            <option value="industrial">Theme: KUKA Orange</option>
+            <option value="cleanroom">Theme: Cleanroom White</option>
+            <option value="stealth">Theme: Stealth Black</option>
+            <option value="hazard">Theme: Fanuc Yellow</option>
+          </select>
+        </div>
+
+        <!-- Focus Workspace -->
+        <button type="button" class="nav-icon-btn" id="btn-focus-workspace" title="Focus Camera on Assembly Table">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <span>Focus</span>
+        </button>
+
+        <!-- 3D High-Res Snapshot -->
+        <button type="button" class="nav-icon-btn" id="btn-snapshot" title="Capture High-Resolution 3D Snapshot">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          <span>Snapshot</span>
+        </button>
+
+        <!-- 3D Schematics & Gallery -->
+        <button type="button" class="nav-icon-btn highlight" id="btn-open-gallery" title="Open 3D Schematics &amp; Blueprint Gallery">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span>3D Schematics</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- LEFT SIDEBAR: MODULAR PARTS CATALOG -->
+    <aside class="parts-sidebar" id="parts-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title-row">
+          <h2 class="sidebar-title">PARTS LIBRARY</h2>
+          <span class="parts-count-badge" id="catalog-count-badge">14 Modules</span>
+        </div>
+        <p class="sidebar-tip">Drag &amp; drop parts onto the workspace or click to attach.</p>
+        
+        <!-- Search -->
+        <div class="search-input-wrap">
+          <input type="text" id="part-search-input" class="search-input" placeholder="Search components..." />
+        </div>
+
+        <!-- Category Filter Tabs -->
+        <div class="category-tabs" id="category-tabs">
+          <button class="cat-pill active" data-cat="all">All</button>
+          <button class="cat-pill" data-cat="bases">Bases</button>
+          <button class="cat-pill" data-cat="joints">Joints</button>
+          <button class="cat-pill" data-cat="limbs">Limbs</button>
+          <button class="cat-pill" data-cat="tools">Tools</button>
+          <button class="cat-pill" data-cat="sensors">Sensors</button>
+          <button class="cat-pill" data-cat="power">Power</button>
+        </div>
+      </div>
+
+      <!-- Parts Grid Container -->
+      <div class="parts-grid-scroll" id="parts-grid-container">
+        <!-- Dynamically rendered by main.js -->
+      </div>
+    </aside>
+
+    <!-- RIGHT SIDEBAR: INSPECTOR & SIMULATION PANEL -->
+    <aside class="inspector-sidebar" id="inspector-sidebar">
+      <!-- BUILD MODE VIEW -->
+      <div class="inspector-tab-content active" id="build-inspector-content">
+        <!-- Robot Assembly Stats -->
+        <div class="inspector-card">
+          <h2 class="inspector-card-title">ROBOT DIAGNOSTICS</h2>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <span class="stat-label">Mass</span>
+              <span class="stat-value" id="stat-mass">0.0 kg</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Power Draw</span>
+              <span class="stat-value" id="stat-power">0 W</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Degrees of Freedom</span>
+              <span class="stat-value" id="stat-dof">0 DOF</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Modules</span>
+              <span class="stat-value" id="stat-parts">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Part Controls -->
+        <div class="inspector-card" id="selected-part-card">
+          <h2 class="inspector-card-title">SELECTED COMPONENT</h2>
+          <div id="selected-part-empty" class="selection-empty-hint">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M15 3h6v6"></path>
+              <path d="M9 21H3v-6"></path>
+              <path d="M21 3l-7 7"></path>
+              <path d="M3 21l7-7"></path>
+            </svg>
+            <span>Click any placed robotic component in the 3D scene to inspect and manipulate it.</span>
+          </div>
+
+          <div id="selected-part-details" class="selection-details hidden">
+            <div class="part-header-row">
+              <div>
+                <div class="part-name-main" id="sel-part-name">Part Name</div>
+                <div class="part-cat-sub" id="sel-part-category">Category</div>
+              </div>
+            </div>
+
+            <!-- Quick Transform / Action Tools -->
+            <div class="transform-actions">
+              <div class="action-label">Rotate Module (90°)</div>
+              <div class="rotate-btn-row">
+                <button type="button" class="rotate-btn" id="btn-rot-x">Rotate X</button>
+                <button type="button" class="rotate-btn" id="btn-rot-y">Rotate Y</button>
+                <button type="button" class="rotate-btn" id="btn-rot-z">Rotate Z</button>
+              </div>
+
+              <div class="manage-btn-row">
+                <button type="button" class="danger-btn" id="btn-delete-part">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  Remove Module
+                </button>
+              </div>
+            </div>
+
+            <!-- Snap Sockets List -->
+            <div class="sockets-info-block">
+              <div class="action-label">Connection Sockets</div>
+              <div id="sel-sockets-list" class="sockets-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assembly Guide Tip -->
+        <div class="inspector-card assembly-tips-card">
+          <h2 class="inspector-card-title">ASSEMBLY GUIDE</h2>
+          <ol class="assembly-steps-list">
+            <li>Place a <strong>Base</strong> (Pedestal or Rover) onto the table.</li>
+            <li>Drag a <strong>Joint</strong> (Yaw or Hinge) to a green snap socket.</li>
+            <li>Attach <strong>Limbs</strong> (Arm / Forearm) to extend reach.</li>
+            <li>Snap a <strong>Tool</strong> (Gripper or Laser) on the wrist.</li>
+            <li>Switch to <strong>Simulation Mode</strong> to articulate and test!</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- SIMULATION MODE VIEW -->
+      <div class="inspector-tab-content" id="sim-inspector-content">
+        <div class="inspector-card">
+          <div id="sim-controls-panel">
+            <!-- Populated dynamically by robotSimulator.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TUTORIAL MODE VIEW -->
+      <div class="inspector-tab-content" id="tutorial-inspector-content">
+        <!-- Populated dynamically by tutorialSystem.js -->
+      </div>
+    </aside>
+
+    <!-- FLOATING BOTTOM CONTROLS HINT -->
+    <div class="controls-card" id="controls-card">
+      <div class="control-tip">
+        <span class="key-pill">Left Drag</span>
+        <span>Orbit Scene</span>
+      </div>
+      <div class="control-tip">
+        <span class="key-pill">Right Drag</span>
+        <span>Pan Camera</span>
+      </div>
+      <div class="control-tip">
+        <span class="key-pill">Scroll</span>
+        <span>Zoom</span>
+      </div>
+      <div class="control-tip sim-only-tip hidden" id="sim-drive-tip">
+        <span class="key-pill">W A S D</span>
+        <span>Drive Rover</span>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS STACK -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- 3D SCHEMATICS & BLUEPRINT GALLERY MODAL -->
+    <div class="gallery-modal" id="gallery-modal">
+      <div class="gallery-dialog">
+        <div class="gallery-header">
+          <div class="gallery-title-row">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <h2>3D Robotics Schematics &amp; Blueprint Gallery</h2>
+          </div>
+          <button type="button" class="modal-close-btn" id="btn-close-gallery">&times;</button>
+        </div>
+
+        <div class="gallery-body">
+          <div class="gallery-grid">
+            <!-- Card 1 -->
+            <div class="schematic-card">
+              <div class="schematic-svg-container">
+                <svg viewBox="0 0 400 240" class="schematic-svg">
+                  <!-- Grid -->
+                  <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(56, 189, 248, 0.12)" stroke-width="1"/>
+                    </pattern>
+                  </defs>
+                  <rect width="400" height="240" fill="url(#grid)" />
+                  <!-- Exploded Arm Diagram -->
+                  <circle cx="80" cy="180" r="35" fill="none" stroke="#38bdf8" stroke-width="2" />
+                  <text x="80" y="185" fill="#38bdf8" font-size="10" text-anchor="middle" font-family="monospace">PEDESTAL</text>
+
+                  <line x1="80" y1="145" x2="80" y2="110" stroke="#22c55e" stroke-width="2" stroke-dasharray="4"/>
+                  <rect x="60" y="80" width="40" height="30" rx="4" fill="none" stroke="#38bdf8" stroke-width="2"/>
+                  <text x="80" y="98" fill="#38bdf8" font-size="10" text-anchor="middle" font-family="monospace">YAW J1</text>
+
+                  <line x1="100" y1="95" x2="160" y2="60" stroke="#22c55e" stroke-width="2" stroke-dasharray="4"/>
+                  <rect x="160" y="45" width="80" height="25" rx="4" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                  <text x="200" y="61" fill="#f59e0b" font-size="10" text-anchor="middle" font-family="monospace">UPPER ARM</text>
+
+                  <line x1="240" y1="58" x2="280" y2="90" stroke="#22c55e" stroke-width="2" stroke-dasharray="4"/>
+                  <circle cx="290" cy="100" r="14" fill="none" stroke="#38bdf8" stroke-width="2"/>
+                  <text x="290" y="104" fill="#38bdf8" font-size="9" text-anchor="middle" font-family="monospace">J3</text>
+
+                  <line x1="304" y1="100" x2="350" y2="100" stroke="#22c55e" stroke-width="2" stroke-dasharray="4"/>
+                  <polygon points="350,90 380,80 380,120 350,110" fill="none" stroke="#22c55e" stroke-width="2"/>
+                  <text x="365" y="103" fill="#22c55e" font-size="8" text-anchor="middle" font-family="monospace">CLAW</text>
+                </svg>
+              </div>
+              <div class="schematic-info">
+                <h3>Exploded Kinematic Chain Architecture</h3>
+                <p>Topological layout of the 6-DOF industrial manipulator showing harmonic gearing and hollow-shaft routing.</p>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="schematic-card">
+              <div class="schematic-svg-container">
+                <svg viewBox="0 0 400 240" class="schematic-svg">
+                  <rect width="400" height="240" fill="url(#grid)" />
+                  <!-- Mobile Rover Schematic -->
+                  <rect x="120" y="70" width="160" height="90" rx="8" fill="none" stroke="#38bdf8" stroke-width="2"/>
+                  <text x="200" y="120" fill="#38bdf8" font-size="12" text-anchor="middle" font-family="monospace">MECANUM CHASSIS</text>
+
+                  <!-- 4 Wheels -->
+                  <rect x="90" y="55" width="25" height="40" rx="4" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                  <rect x="285" y="55" width="25" height="40" rx="4" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                  <rect x="90" y="135" width="25" height="40" rx="4" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                  <rect x="285" y="135" width="25" height="40" rx="4" fill="none" stroke="#f59e0b" stroke-width="2"/>
+
+                  <!-- LiDAR Radar Pulses -->
+                  <circle cx="200" cy="115" r="16" fill="none" stroke="#22c55e" stroke-width="2"/>
+                  <circle cx="200" cy="115" r="50" fill="none" stroke="#22c55e" stroke-width="1" stroke-dasharray="3 3"/>
+                  <circle cx="200" cy="115" r="85" fill="none" stroke="#22c55e" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
+                  <line x1="200" y1="115" x2="260" y2="60" stroke="#22c55e" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="schematic-info">
+                <h3>Omnidirectional Rover &amp; LiDAR Mapping</h3>
+                <p>Four-wheel vector drive kinematics combined with 360° time-of-flight spatial point cloud mapping.</p>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="schematic-card">
+              <div class="schematic-svg-container">
+                <svg viewBox="0 0 400 240" class="schematic-svg">
+                  <rect width="400" height="240" fill="url(#grid)" />
+                  <!-- Laser Welder Schematic -->
+                  <circle cx="100" cy="120" r="40" fill="none" stroke="#ef4444" stroke-width="2"/>
+                  <text x="100" y="125" fill="#ef4444" font-size="10" text-anchor="middle" font-family="monospace">LASER DIODE</text>
+
+                  <line x1="140" y1="120" x2="230" y2="120" stroke="#ef4444" stroke-width="3"/>
+                  <polygon points="230,105 270,120 230,135" fill="none" stroke="#38bdf8" stroke-width="2"/>
+                  <line x1="270" y1="120" x2="350" y2="120" stroke="#38bdf8" stroke-width="4"/>
+
+                  <!-- Sparks -->
+                  <circle cx="350" cy="120" r="6" fill="#facc15"/>
+                  <line x1="350" y1="120" x2="365" y2="100" stroke="#facc15" stroke-width="2"/>
+                  <line x1="350" y1="120" x2="370" y2="130" stroke="#facc15" stroke-width="2"/>
+                  <line x1="350" y1="120" x2="360" y2="140" stroke="#facc15" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="schematic-info">
+                <h3>Fiber Laser Arc Welding End Effector</h3>
+                <p>High-energy focused coherent beam with coaxial inert shielding gas for additive manufacturing and precision joining.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN APP SCRIPT -->
+  </body>
+</html>
