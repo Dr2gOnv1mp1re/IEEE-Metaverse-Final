@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createPartMesh, ROBOT_PARTS_CATALOG } from './robotParts.js';
+import { loadExplodedNode, cleanupExplodedNode } from './explodedNode.js';
 
 /**
  * Pre-assembled Robotics Showcases & Templates.
@@ -7,6 +8,7 @@ import { createPartMesh, ROBOT_PARTS_CATALOG } from './robotParts.js';
 export function loadRobotPreset(presetId, dragDropSystem) {
   // Clear any existing assembly
   dragDropSystem.clearAssembly();
+  cleanupExplodedNode();
 
   switch (presetId) {
     // -------------------------------------------------------------------------
@@ -111,6 +113,11 @@ export function loadRobotPreset(presetId, dragDropSystem) {
 
       dragDropSystem.selectPart(rover);
       dragDropSystem.showToast('Loaded: Mobile Manipulator Laser Workstation', 'success');
+      break;
+    }
+
+    case 'exploded_node': {
+      loadExplodedNode(dragDropSystem);
       break;
     }
 

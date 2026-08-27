@@ -726,6 +726,7 @@ html, body {
   width: 100%;
   height: 5px;
   -webkit-appearance: none;
+  appearance: none;
   background: rgba(56, 189, 248, 0.2);
   border-radius: 4px;
   outline: none;
@@ -733,6 +734,7 @@ html, body {
 
 .hud-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -1358,4 +1360,61 @@ html, body {
   .controls-card {
     display: none;
   }
+}
+
+/* =============================================================================
+   EXPLODED NODE LABELS
+   ============================================================================= */
+#exploded-labels-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.exploded-label {
+  position: absolute;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  transform: translate(20px, -50%); /* Base offset to the right of the line */
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.exploded-label.visible {
+  opacity: 1;
+}
+
+.exploded-label::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+  background: transparent;
+}
+
+/* Connect line styling */
+.exploded-line {
+  position: absolute;
+  background-color: #ffffff;
+  height: 1.5px;
+  transform-origin: 0 50%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.exploded-line.visible {
+  opacity: 0.7;
 }

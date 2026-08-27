@@ -13,18 +13,24 @@ This application focuses on "Advanced Learning in an Educational Environment" by
 - **Dedicated Tutorial Mode**: Acts as an automated AI instructional tool, guiding students through hands-on robotics assembly curriculums.
 - **Adaptive Guidance**: Real-time holographic guide beacons show where components should snap together, preventing invalid connections and providing immediate feedback.
 - **In-Depth Theory**: Connects practical assembly with engineering theory, explaining concepts like Degrees of Freedom, SLAM LiDAR point clouds, and kinematics.
+- **Mascot Voice Assistant**: Features an animated 3D mascot that provides spoken instructions, including a toggle to mute/stop the voice for learning at your own pace.
 
 ### 2. 🛠️ Immersive Smart Workspace (Build Mode)
 - **Procedural 3D Models**: All robotic components are highly detailed, industrial-grade 3D meshes procedurally generated in code (`robotParts.js`), eliminating the need for external `.glb` files and drastically improving browser performance for inclusive accessibility.
-- **Magnetic Snap Points**: Drag components from the sidebar catalog onto the 3D workspace. Compatible connection sockets automatically orient and snap to incoming parts.
+- **Magnetic Snap Points & Validation**: Drag components from the sidebar catalog onto the 3D workspace. Compatible connection sockets automatically orient and snap to incoming parts. Invalid connection attempts are explicitly rejected with a red visual flash and a detailed error message explaining what component category is expected.
 - **Real-Time Diagnostics HUD**: The system tracks the physical properties of the assembled robot (Mass, Power Draw, Degrees of Freedom) as an adaptive learning metric.
 - **Dynamic Color Themes**: Real-time material styling including *Cyber Slate*, *KUKA Orange*, *Cleanroom White*, *Stealth Black*, and *Fanuc Yellow*.
 
 ### 3. ⚡ Physics & Motion Simulator
 - **Seamless Mode Switcher**: Toggle smoothly between **SMART WORKSPACE** and **SIMULATION**.
-- **Forward Kinematics (FK) Sliders**: Automatically discovers all active joints in the robot and generates interactive angle sliders.
+- **🎤 AI Voice Assistant**: A built-in natural language voice control system (powered by the Web Speech API). Click the microphone in the HUD and speak commands to actuate the robot in real-time.
+  - **Automated Work Cycles**: "Pick and place", "Demo", "Weld", "Home", "Reset"
+  - **Tool Control**: "Open gripper", "Close", "Release", "Grab", "Pinch"
+  - **Manual Joint Jogging**: "Turn left", "Rotate right", "Raise", "Lower", "Extend", "Retract", "Counter"
+  - Unrecognized commands provide immediate feedback via yellow warning toasts (e.g. *"Voice command not recognized: 'make a sandwich'"*).
+- **Forward Kinematics (FK) Sliders**: Automatically discovers all active joints in the robot and generates interactive angle sliders. Sliders stay perfectly in sync when voice commands are used.
+- **⌨️ Keyboard Controls**: Users can manually drive the arm joints using keyboard bindings (`I`, `K`, `J`, `L`, `U`, `O`) or drive mobile bases with `WASD` / Arrow keys.
 - **Actuated Tool Operations**: Grippers clamp, LiDAR domes spin, and laser welders emit dynamic sparks.
-- **Driveable Mobile Rover**: Steer mecanum mobile bases around the lab floor with `WASD` / Arrow keys.
 
 ### 4. 📊 3D Schematics & Blueprint Gallery
 - High-tech holographic dialog displaying 3D exploded view blueprints, kinematic chain schematics, and sensor integration diagrams directly in the smart classroom.

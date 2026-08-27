@@ -110,6 +110,24 @@ export class RobotSimulator {
         case 'e':
           this.driveInput.strafe = 1;
           break;
+        case 'i':
+          if (this.joints[1]) this.joints[1].targetAngle -= 0.1;
+          break;
+        case 'k':
+          if (this.joints[1]) this.joints[1].targetAngle += 0.1;
+          break;
+        case 'j':
+          if (this.joints[0]) this.joints[0].targetAngle += 0.1;
+          break;
+        case 'l':
+          if (this.joints[0]) this.joints[0].targetAngle -= 0.1;
+          break;
+        case 'u':
+          if (this.joints[2]) this.joints[2].targetAngle -= 0.1;
+          break;
+        case 'o':
+          if (this.joints[2]) this.joints[2].targetAngle += 0.1;
+          break;
       }
     });
 
@@ -355,6 +373,18 @@ export class RobotSimulator {
       </div>
     `;
 
+    // 5. Voice Assistant
+    html += `
+      <div class="sim-group-title">AI Voice Assistant</div>
+      <div class="routine-btn-grid" style="margin-top:0.5rem; display:flex; flex-direction:column; gap:0.5rem;">
+        <button class="routine-btn" id="btn-voice-assistant" style="width:100%; border-color:#8b5cf6;">
+          <span class="routine-icon">🎤</span>
+          <span id="voice-btn-text">Start Voice Control</span>
+        </button>
+        <div id="voice-status" style="font-size:0.75rem; color:#a1a1aa; text-align:center;">Say: "open gripper", "rotate base left", or "pick and place"</div>
+      </div>
+    `;
+
     container.innerHTML = html;
 
     // Attach event listeners to sliders
@@ -427,6 +457,113 @@ export class RobotSimulator {
 
     const homeBtn = document.getElementById('btn-routine-home');
     if (homeBtn) homeBtn.addEventListener('click', () => this.runRoutine('home_pose'));
+
+    this.initVoiceAssistant();
+  }
+
+  initVoiceAssistant() {
+    const btn = document.getElementById('btn-voice-assistant');
+    const status = document.getElementById('voice-status');
+    const btnText = document.getElementById('voice-btn-text');
+    if (!btn) return;
+
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      status.textContent = "Voice Assistant not supported in this browser.";
+      btn.disabled = true;
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    this.recognition = new SpeechRecognition();
+    this.recognition.continuous = false;
+    this.recognition.interimResults = false;
+    this.recognition.lang = 'en-US';
+
+    this.recognition.onstart = () => {
+      btn.classList.add('active');
+      btn.style.backgroundColor = '#8b5cf633';
+      btnText.textContent = "Listening...";
+      status.textContent = "Speak now...";
+    };
+
+    this.recognition.onresult = (event) => {
+      const command = event.results[0][0].transcript.toLowerCase();
+      status.textContent = `Heard: "${command}"`;
+      this.processVoiceCommand(command);
+    };
+
+    this.recognition.onerror = (event) => {
+      status.textContent = `Error: ${event.error}`;
+    };
+
+    this.recognition.onend = () => {
+      btn.classList.remove('active');
+      btn.style.backgroundColor = '';
+      btnText.textContent = "Start Voice Control";
+      setTimeout(() => { if(status.textContent.startsWith("Heard:") || status.textContent.startsWith("Error:")) status.textContent = "Say: 'open gripper', 'rotate base left', or 'pick and place'"; }, 3000);
+    };
+
+    btn.addEventListener('click', () => {
+      try {
+        this.recognition.start();
+      } catch(e) {}
+    });
+  }
+
+  processVoiceCommand(cmd) {
+    let handled = false;
+    if (cmd.includes('pick and place') || cmd.includes('pick-and-place') || cmd.includes('demo')) {
+      this.runRoutine('pick_and_place'); handled = true;
+    } else if (cmd.includes('weld')) {
+      this.runRoutine('weld_seam'); handled = true;
+    } else if (cmd.includes('home') || cmd.includes('reset')) {
+      this.runRoutine('home_pose'); handled = true;
+    } else if (cmd.includes('open') || cmd.includes('release') || cmd.includes('drop')) {
+      const gripper = this.activeTools.find(tool => tool.type === 'gripper');
+      if (gripper) { gripper.state = 0; document.getElementById(`btn-tool-${this.activeTools.indexOf(gripper)}`)?.classList.remove('active'); }
+      this.dragDropSystem.showToast('Voice: Opened gripper', 'success'); handled = true;
+    } else if (cmd.includes('close') || cmd.includes('grab') || cmd.includes('pinch')) {
+      const gripper = this.activeTools.find(tool => tool.type === 'gripper');
+      if (gripper) { gripper.state = 1; document.getElementById(`btn-tool-${this.activeTools.indexOf(gripper)}`)?.classList.add('active'); }
+      this.dragDropSystem.showToast('Voice: Closed gripper', 'success'); handled = true;
+    } 
+    
+    // Find joints more robustly
+    const yawJoint = this.joints.find(j => j.name.toLowerCase().includes('yaw') || j.name.toLowerCase().includes('base')) || this.joints[0];
+    const pitchJoint = this.joints.find(j => j.name.toLowerCase().includes('pitch') || j.name.toLowerCase().includes('shoulder')) || this.joints[1];
+
+    if (cmd.includes('rotate') || cmd.includes('turn') || cmd.includes('spin') || cmd.includes('left') || cmd.includes('right') || cmd.includes('counter')) {
+      if (cmd.includes('left') || cmd.includes('counter')) {
+        if (yawJoint) { yawJoint.targetAngle += 0.8; this.updateSliderUI(yawJoint); this.dragDropSystem.showToast('Voice: Rotating base left', 'success'); handled = true; }
+      } else if (cmd.includes('right')) {
+        if (yawJoint) { yawJoint.targetAngle -= 0.8; this.updateSliderUI(yawJoint); this.dragDropSystem.showToast('Voice: Rotating base right', 'success'); handled = true; }
+      }
+    } 
+    
+    if (cmd.includes('lower') || cmd.includes('down') || cmd.includes('extend')) {
+       if (pitchJoint) { pitchJoint.targetAngle += 0.5; this.updateSliderUI(pitchJoint); this.dragDropSystem.showToast('Voice: Lowering arm', 'success'); handled = true; }
+    } else if (cmd.includes('raise') || cmd.includes('up') || cmd.includes('lift') || cmd.includes('retract')) {
+       if (pitchJoint) { pitchJoint.targetAngle -= 0.5; this.updateSliderUI(pitchJoint); this.dragDropSystem.showToast('Voice: Raising arm', 'success'); handled = true; }
+    }
+
+    if (!handled) {
+      this.dragDropSystem.showToast(`Voice command not recognized: "${cmd}"`, 'warning');
+    }
+  }
+
+  updateSliderUI(joint) {
+    if (!joint) return;
+    const idx = this.joints.indexOf(joint);
+    if (idx === -1) return;
+    
+    // Clamp to hardware limits
+    joint.targetAngle = THREE.MathUtils.clamp(joint.targetAngle, joint.min, joint.max);
+    
+    const slider = document.getElementById(`slider-joint-${idx}`);
+    if (slider) slider.value = joint.targetAngle;
+    
+    const valLabel = document.getElementById(`val-joint-${idx}`);
+    if (valLabel) valLabel.textContent = `${Math.round(THREE.MathUtils.radToDeg(joint.targetAngle))}°`;
   }
 
   runRoutine(routineName) {

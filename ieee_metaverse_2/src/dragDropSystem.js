@@ -151,22 +151,39 @@ export class DragDropSystem {
     // 1. Check for magnetic snapping to compatible sockets on existing parts
     const snap = this.findNearestSnapSocket();
 
+    // Reset ghost mesh color in case it was red
+    this.ghostMesh.traverse((child) => {
+      if (child.isMesh && child.userData.originalColor) {
+        child.material.color.setHex(child.userData.originalColor);
+      }
+    });
+
     if (snap) {
       this.activeSnapTarget = snap;
       // Snap ghost to socket world position
       this.ghostMesh.position.copy(snap.worldPos);
-      this.ghostMesh.quaternion.copy(snap.worldQuat);
+      if (snap.worldQuat) this.ghostMesh.quaternion.copy(snap.worldQuat);
 
-      // Highlight target socket
-      this.highlightSocket(snap.marker, true);
+      if (snap.isIncompatible) {
+        // Flash red for incompatible socket
+        this.ghostMesh.traverse((child) => {
+          if (child.isMesh) {
+            if (!child.userData.originalColor) child.userData.originalColor = child.material.color.getHex();
+            child.material.color.setHex(0xef4444); // red
+          }
+        });
+      } else {
+        // Highlight target socket for valid snap
+        this.highlightSocket(snap.marker, true);
+      }
       return;
     }
 
     // No snap candidate active
-    if (this.activeSnapTarget) {
+    if (this.activeSnapTarget && !this.activeSnapTarget.isIncompatible) {
       this.highlightSocket(this.activeSnapTarget.marker, false);
-      this.activeSnapTarget = null;
     }
+    this.activeSnapTarget = null;
 
     // 2. If part is a ROOT base (pedestal or rover), raycast against workspace table
     const meta = ROBOT_PARTS_CATALOG[this.draggedPartId];
@@ -208,6 +225,13 @@ export class DragDropSystem {
     let newMesh = null;
 
     if (this.activeSnapTarget) {
+      if (this.activeSnapTarget.isIncompatible) {
+        const allowed = this.activeSnapTarget.socket.types.join(', ');
+        this.showToast(`Incompatible connection: Socket only accepts [${allowed}], but tried to attach ${meta.category}`, 'error');
+        this.cancelDrag();
+        return;
+      }
+
       // Snapped to existing part socket
       const { parentPart, socket } = this.activeSnapTarget;
       newMesh = createPartMesh(partId, { theme: this.currentTheme });
@@ -348,6 +372,9 @@ export class DragDropSystem {
 
     let nearest = null;
     let minDistance = this.SNAP_DISTANCE;
+    
+    let nearestIncompatible = null;
+    let minIncompatibleDist = this.SNAP_DISTANCE;
 
     for (const part of this.placedParts) {
       // Don't snap to itself if re-attaching
@@ -358,9 +385,6 @@ export class DragDropSystem {
         const socket = sockets[i];
         if (socket.occupiedBy) continue; // Already has child
 
-        // Check if category is allowed
-        if (!socket.types.includes(meta.category)) continue;
-
         // Calculate socket world position
         const worldPos = new THREE.Vector3();
         const worldQuat = new THREE.Quaternion();
@@ -370,23 +394,38 @@ export class DragDropSystem {
         // Distance from ghost mesh to socket
         const dist = this.raycaster.ray.distanceToPoint(worldPos);
 
-        if (dist < minDistance) {
-          minDistance = dist;
-          const markerGroup = part.userData.socketMarkers;
-          const marker = markerGroup ? markerGroup.children[i] : null;
+        const isCompatible = socket.types.includes(meta.category);
 
-          nearest = {
-            parentPart: part,
-            socket,
-            marker,
-            worldPos,
-            worldQuat
-          };
+        if (isCompatible) {
+          if (dist < minDistance) {
+            minDistance = dist;
+            const markerGroup = part.userData.socketMarkers;
+            const marker = markerGroup ? markerGroup.children[i] : null;
+
+            nearest = {
+              parentPart: part,
+              socket,
+              marker,
+              worldPos,
+              worldQuat
+            };
+          }
+        } else {
+          if (dist < minIncompatibleDist) {
+            minIncompatibleDist = dist;
+            nearestIncompatible = {
+              isIncompatible: true,
+              parentPart: part,
+              socket,
+              worldPos,
+              worldQuat
+            };
+          }
         }
       }
     }
 
-    return nearest;
+    return nearest || nearestIncompatible;
   }
 
   showCompatibleSockets(partId) {

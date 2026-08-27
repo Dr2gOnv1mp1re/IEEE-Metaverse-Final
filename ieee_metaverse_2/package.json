@@ -1,7 +1,8 @@
 {
-  "name": "robotics-metaverse",
+  "name": "smart-classroom-robotics",
   "version": "1.0.0",
   "private": true,
+  "description": "Smart Classroom: AI-Powered Adaptive Learning Robotics Simulator for the IEEE Educational Metaverse Challenge.",
   "type": "module",
   "scripts": {
     "dev": "vite",
